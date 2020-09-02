@@ -2,7 +2,7 @@
   esme.processRequest
   (:use [clojure.tools.logging])
   (:import (org.smpp Data)
-           (org.smpp.pdu Request DeliverSM)
+           (org.smpp.pdu Request)
            (org.smpp.pdu.tlv TLV))
   (:import org.smpp.Session)
   (:import org.smpp.TCPIPConnection)

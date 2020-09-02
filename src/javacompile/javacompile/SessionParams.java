@@ -1,10 +1,7 @@
 package javacompile;
 
-import jenkinshash.JenkinsHash;
-
 import java.util.Hashtable;
 import java.util.Map;
-
 /**
  * Created by Yimika on 27/07/2016.
  */

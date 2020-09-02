@@ -1,10 +1,9 @@
 (ns esme.callapp
   (:use [clojure.tools.logging])
   (:require [clojure.data.json :as json])
-  (:require [org.httpkit.client :as http]
+  (:require [clj-http.client :as http]
             [clojure.string :as str])
-  (:import (java.net ConnectException SocketTimeoutException)
-           (org.json.simple.parser JSONParser)))
+  (:import (java.net ConnectException SocketTimeoutException)))
 
 
 (defn callAPP
@@ -15,9 +14,9 @@
     (let [resp (json/write-str {:message msg_as_timeout, :action "S"})]
       resp)
     (let [options  {:socket-timeout (Integer. as_connect_timeout)
-                      :conn-timeout (Integer. as_read_timeout)
-                      :timeout (Integer. as_connect_timeout)             ; ms
-                      :query-params {:sub msisdn :sid sessionId :state as_request_type :msg input}}
+										:conn-timeout (Integer. as_read_timeout)
+										:timeout (Integer. as_connect_timeout)             ; ms
+										:query-params {:sub msisdn :sid sessionId :state as_request_type :msg input}}
             {:keys [status body error] :as trace}  @(http/get as_url options)]
         (try
           (if error

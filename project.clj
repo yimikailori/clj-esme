@@ -1,19 +1,27 @@
-(defproject clj_esmesmpp "1.1.0-SNAPSHOT"
-            :description "ESME Application clojure. Build 201607071759(update 202001100822"
+(defproject clj_esmesmpp "2.1.0-SNAPSHOT"
+            :description "ESME Application clojure."
             :author "yilori"
             :omit-source true
             :dependencies  [[org.clojure/clojure "1.10.1"]
                             [org.clojure/tools.cli "0.2.4"]
                             [org.clojure/data.json "0.2.7"]
                             [org.clojure/core.async "0.7.559"]
-                            [http-kit "2.3.0"]
+                            [clj-http "3.10.0"]
                             [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
                                                                javax.jms/jms
                                                                com.sun.jdmk/jmxtools
                                                                com.sun.jmx/jmxri]]
-                            [org.clojure/tools.logging "0.2.6"]]
-            :profiles  {:uberjar {:aot :all}}
-            :main esme.core
-  :source-paths ["src"]
-  :java-source-paths ["src/javacompile"])
+                            [org.clojure/tools.logging "0.2.6"]
+                            [jenkins-hash/jenkins-hash "0.0.4"]
+
+
+                            ]
+            :profiles  {:uberjar {:aot     :all}}
+  :global-vars {*warn-on-reflection* false}
+  :main ^:skip-aot esme.core
+  :source-paths ["src" "lib/opensmpp-core-3.0.0.jar"]
+  :java-source-paths ["src" "lib/opensmpp-core-3.0.0.jar"]
+  :jvm-opts  ["-Dlogback.configurationFile=/Users/yimika/Documents/IdeaProjects/clj-esme-ng/resources/logback.xml"
+              "-Dld.esme=/Users/yimika/Documents/IdeaProjects/clj-esme-ng/resources/esmeprop.conf"]
+  )
 
