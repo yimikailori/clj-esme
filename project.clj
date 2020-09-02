@@ -7,10 +7,7 @@
                             [org.clojure/data.json "0.2.7"]
                             [org.clojure/core.async "0.7.559"]
                             [clj-http "3.10.0"]
-                            [log4j/log4j "1.2.17" :exclusions [javax.mail/mail
-                                                               javax.jms/jms
-                                                               com.sun.jdmk/jmxtools
-                                                               com.sun.jmx/jmxri]]
+                            [ch.qos.logback/logback-classic "1.2.3"]
                             [org.clojure/tools.logging "0.2.6"]
                             [jenkins-hash/jenkins-hash "0.0.4"]
                             ]
