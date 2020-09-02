@@ -13,7 +13,9 @@
                             ]
   :min-lein-version "2.0.0"
 
-  :profiles  {:uberjar {:aot     :all}}
+  :profiles  {:uberjar {:omit-source true
+                        :aot     :all
+                        :uberjar-name "esmeapp.jar"}}
   :global-vars {*warn-on-reflection* false}
   :main ^:skip-aot esme.core
   :source-paths ["src" "lib/opensmpp-core-3.0.0.jar"]
