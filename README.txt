@@ -12,3 +12,9 @@ $JAVA_HOME/java -Dclojure.core.async.pool-size=200 -Dlog4j.configuration=File:/o
         -cp '/Users/yimika/Documents/IdeaProjects/clj-esme-ng/target/clj_esmesmpp-2.1.0-SNAPSHOT-standalone.jar:/Users/yimika/Documents/IdeaProjects/clj-esme-ng/lib/*' \
          esme.core
 
+
+ web: java \
+  -Dld.esme=resources/esmeprop.conf -cp 'target/clj_esmesmpp-2.1.0-SNAPSHOT-standalone.jar:/lib/*' clojure.main -m esme.core
+
+
+

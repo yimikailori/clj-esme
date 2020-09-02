@@ -13,11 +13,10 @@
                                                                com.sun.jmx/jmxri]]
                             [org.clojure/tools.logging "0.2.6"]
                             [jenkins-hash/jenkins-hash "0.0.4"]
-
-
                             ]
-            :profiles  {:uberjar {:aot     :all}}
   :min-lein-version "2.0.0"
+
+  :profiles  {:uberjar {:aot     :all}}
   :global-vars {*warn-on-reflection* false}
   :main ^:skip-aot esme.core
   :source-paths ["src" "lib/opensmpp-core-3.0.0.jar"]
