@@ -1,8 +1,7 @@
 (defproject clj_esmesmpp "2.1.0-SNAPSHOT"
             :description "ESME Application clojure."
             :author "yilori"
-            :omit-source true
-            :min-lein-version "2.0.0"
+            :omit-source true   :min-lein-version "2.0.0"
             :dependencies  [[org.clojure/clojure "1.10.1"]
                             [org.clojure/tools.cli "0.2.4"]
                             [org.clojure/data.json "0.2.7"]
@@ -13,8 +12,10 @@
                                                                com.sun.jdmk/jmxtools
                                                                com.sun.jmx/jmxri]]
                             [org.clojure/tools.logging "0.2.6"]]
-            :profiles  {:uberjar {:aot :all}}
-            :main ^:skip-aot esme.core
+            :profiles  {:uberjar {:aot :all
+                                  :uberjar-name  "clj_esmesmpp-2.1.0-SNAPSHOT-standalone.jar"}}
+  :global-vars {*warn-on-reflection* false}
+  :main ^:skip-aot esme.core
   :source-paths ["src"]
   :java-source-paths ["src/javacompile"])
 
