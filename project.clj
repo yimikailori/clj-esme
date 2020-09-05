@@ -1,7 +1,8 @@
 (defproject clj_esmesmpp "2.1.0-SNAPSHOT"
-            :description "ESME Application clojure. Build 201607071759(update 202001100822"
+            :description "ESME Application clojure."
             :author "yilori"
             :omit-source true
+            :min-lein-version "2.0.0"
             :dependencies  [[org.clojure/clojure "1.10.1"]
                             [org.clojure/tools.cli "0.2.4"]
                             [org.clojure/data.json "0.2.7"]
