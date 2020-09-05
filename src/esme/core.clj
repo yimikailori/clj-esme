@@ -94,7 +94,7 @@ esme.core
                 session (Session. connect)
                 attemptBind (fn [bindReq]
                               (do
-                                (.setReceiveTimeout connect 20000)
+                                (.setReceiveTimeout connect 5000)
 
                                 (info (str "Attempting to bind with id:" ussd_id ", bindcount ="@checkBind))
                                 (.setSystemId bindReq ussd_id)
