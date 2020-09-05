@@ -1,4 +1,4 @@
-(defproject clj_esmesmpp "1.1.0-SNAPSHOT"
+(defproject clj_esmesmpp "2.1.0-SNAPSHOT"
             :description "ESME Application clojure. Build 201607071759(update 202001100822"
             :author "yilori"
             :omit-source true
@@ -13,7 +13,7 @@
                                                                com.sun.jmx/jmxri]]
                             [org.clojure/tools.logging "0.2.6"]]
             :profiles  {:uberjar {:aot :all}}
-            :main esme.core
+            :main ^:skip-aot esme.core
   :source-paths ["src"]
   :java-source-paths ["src/javacompile"])
 

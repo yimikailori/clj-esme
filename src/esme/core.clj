@@ -7,30 +7,35 @@ esme.core
         [clojure.tools.cli :only (cli)]
         [clojure-ini.core :as prop])
   (:require [esme.processRequest :as pr]
-            [clojure.core.async :refer [go]]
-            [clojure.core.async :as async])
+            [clojure.core.async :refer [go] :as async])
   (:import org.smpp.TCPIPConnection)
   (:import org.smpp.pdu.BindTransciever)
   (:import org.smpp.util.Queue)
-  (:import org.smpp.util.TerminatingZeroNotFoundException
-           (org.smpp Data ServerPDUEvent Session)
+  (:import (org.smpp Data ServerPDUEvent Session)
            (javacompile SMPPpdu)
            (javacompile SessionParams)
-           (java.util Hashtable Date Timer TimerTask)
-           (jenkinshash JenkinsHash)
-           (java.text SimpleDateFormat)))
+           (java.util Timer TimerTask)))
+
+(def checkBind (atom 0))
 
 
-
-(defn task [session attemptBind checkBind]
+(defn task [session attemptBind]
   (try
     (debug "enquireLink" session)
-    (.enquireLink session)
+    (if (= @checkBind 1)
+      (let [newbind(BindTransciever.)
+            _ (reset! checkBind 0)]
+        (infof "reattempting to rebind = %s" @checkBind)
+        (attemptBind newbind))
+      (do
+        (.enquireLink session)
+        (reset! checkBind 1)))
+
     (catch InterruptedException e
-      (let [_(error "task enquireLink"  e)
+      (let [_(error "task enquireLink InterruptedException"  e)
             newbind(BindTransciever.)
             _ (swap! checkBind inc)]
-        (info "reattempting to rebind =" @checkBind )
+        (info "reattempting Interrupted, rebind =" @checkBind )
         (attemptBind newbind)))))
 
 
@@ -40,8 +45,7 @@ esme.core
 
 
 
-(comment
-  (defn SessionParams
+#_(defn SessionParams
     [msisdn newSession getSessionId clearSession]
     (let [session_data (Hashtable.)
           ^JenkinsHash hash (JenkinsHash.)]
@@ -53,11 +57,9 @@ esme.core
           (let [sessionId (.get session_data msisdn)]
             (.toString sessionId))
           (if (not-empty clearSession)
-            (.remove session_data msisdn)))))))
+            (.remove session_data msisdn))))))
 
 
-(defn get-date [date]
-  (.format (SimpleDateFormat. "yyyy-MM-dd") date))
 
 
 (defn-
@@ -72,8 +74,8 @@ esme.core
              ["-c" "--config" "REQUIRED: Path to configuration properties"]
              )]
     (info "Service starting...")
-    (def config_details (:config opts))
-    (let [{ussd_ip          :host
+    (let [ config_details (:config opts)
+          {ussd_ip          :host
            ussd_port        :port
            ussd_id          :ussd-username
            ussd_password    :ussd-password
@@ -82,8 +84,7 @@ esme.core
            msg_esme_error   :msg-esme-error
            as_connect_timeout :as-connect-timeout
            as_read_timeout   :as-read-timeout
-           msg_as_timeout    :msg-as-timeout}
-          (config config_details)]
+           msg_as_timeout    :msg-as-timeout} (config config_details)]
 
         (try
           (info (str "ussd_ip and port is " ussd_ip ":" ussd_port))
@@ -91,7 +92,6 @@ esme.core
           (let [bindReq (BindTransciever.)
                 connect (TCPIPConnection. ussd_ip (Integer. ussd_port))
                 session (Session. connect)
-                checkBind (atom 0)
                 attemptBind (fn [bindReq]
                               (do
                                 (.setReceiveTimeout connect 20000)
@@ -110,6 +110,10 @@ esme.core
                                 (.setAddressRange bindReq (byte 0) (byte 0) (str ""))
 
                                 (infof "Trying to bind now (%s)" (.debugString bindReq))))
+                unbind (fn []
+                         (let [response (.unbind session)
+                               _ (info "Ubind Response" (.debugString response))]
+                           (info "Service shutting down")))
                 _  (attemptBind bindReq)
                 requestEvents (Queue.)
                 newini (SessionParams.)
@@ -117,48 +121,49 @@ esme.core
                               (handleEvent [#^ServerPDUEvent event]
                                 (let [pdu (.getPDU event)]
                                     ;;;;;;;;;;;;;;;;
-                                    (when (.isRequest pdu)
+                                    (if (.isRequest pdu)
                                       (async/go
                                         (let [[refState refmsg] (pr/processRequest pdu session newini as_url msg_esme_error
-                                                               as_connect_timeout as_read_timeout msg_as_timeout checkBind)]
+                                                                                   as_connect_timeout as_read_timeout msg_as_timeout checkBind)]
                                           #_(when (nil? refState)
                                               ;;refMsg => Not connected ;;Broken pipe
-                                            (errorf "error state[%s]"refmsg)
-                                            (Thread/sleep 3000)
-                                            (let [newbind(BindTransciever.)
-                                                  _ (swap! checkBind inc)]
-                                              (info "reattempting to rebind due to refmsg =" @checkBind )
-                                              (attemptBind newbind))))))
-                                    (when (.isResponse pdu)
-                                      (do
-                                        (if (== (.getCommandStatus pdu) (Data/ESME_RSUBMITFAIL ))
-                                          (error "asynchronous response Failed |" (.debugString pdu))
-                                          (info "asynchronous response received |" (.debugString pdu))))))))
+                                              (errorf "error state[%s]"refmsg)
+                                              (Thread/sleep 3000)
+                                              (let [newbind(BindTransciever.)
+                                                    _ (swap! checkBind inc)]
+                                                (info "reattempting to rebind due to refmsg =" @checkBind )
+                                                (attemptBind newbind)))))
+                                      (if (.isResponse pdu)
+                                        (do
+                                          (if (== (.getCommandStatus pdu) (Data/ESME_RSUBMITFAIL ))
+                                            (error "asynchronous response Failed |" (.debugString pdu))
+                                            (do
+                                              (reset! checkBind 0)
+                                              (debug "asynchronous response received |" (.debugString pdu)))))
+                                        (warn "asynchronous unknown pdu response received |" (.debugString pdu)))
+                                      ))))
                 bindResp (.bind session bindReq pduListener)]
             (info "Bind response: " (.debugString bindResp))
             (info "Command Status: " (.getCommandStatus bindResp))
             (if (== (.getCommandStatus bindResp) (Data/ESME_ROK))
               (do
                 (info "Bound to USSD Successfully.")
+
+                (.addShutdownHook (Runtime/getRuntime) (Thread. (unbind)))
                 ;;send enquirelink every 1secs
                 ;;(set-interval #(task session attemptBind checkBind) 1000)
                 (doto (Timer. "enquireLink" true)
                   (.scheduleAtFixedRate (proxy [TimerTask] []
-                                          (run [] (task session attemptBind checkBind)))
+                                          (run [] (task session attemptBind)))
                                         5000 5000)))
               (do
                 (error "Sorry couldnt bind to USSD gateway")
                 (System/exit 0)))
 
 
-            (.addShutdownHook (Runtime/getRuntime)
-                              (Thread. (fn [] (info "Service shutting down...")
-                                         (let [response (.unbind session)]
-                                           (info "Ubind Response" (.debugString response))))))
-
             ;  (TLV. ussd_service_opt)
             ) (catch Exception e
-                (error "Error is: " (.printStackTrace e)))))))
+                (error "Error is: " (.getMessage e) e))))))
 
 
 
