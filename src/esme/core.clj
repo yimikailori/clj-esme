@@ -2,12 +2,12 @@
 (ns ^{:doc    "The esme  written in clojure "
       :author "yilori"}
 esme.core
-  (:gen-class :main true)
+  (:gen-class)
   (:use [clojure.tools.logging]
         [clojure.tools.cli :only (cli)]
         [clojure-ini.core :as prop])
   (:require [esme.processRequest :as pr]
-            [clojure.core.async :refer [go] :as async])
+            [clojure.core.async :refer [go chan <! >!] :as async])
   (:import org.smpp.TCPIPConnection)
   (:import org.smpp.pdu.BindTransciever)
   (:import org.smpp.util.Queue)
@@ -112,7 +112,8 @@ esme.core
                                 (infof "Trying to bind now (%s)" (.debugString bindReq))))
                 unbind (fn []
                          (let [response (.unbind session)
-                               _ (info "Ubind Response" (.debugString response))]
+                               _ (info "Ubind Response" (.debugString response))
+                               _ (shutdown-agents)]
                            (info "Service shutting down")))
                 _  (attemptBind bindReq)
                 requestEvents (Queue.)
@@ -122,20 +123,23 @@ esme.core
                                 (let [pdu (.getPDU event)]
                                     ;;;;;;;;;;;;;;;;
                                     (if (.isRequest pdu)
-                                      (async/go
-                                        (let [[refState refmsg] (pr/processRequest pdu session newini as_url msg_esme_error
-                                                                                   as_connect_timeout as_read_timeout msg_as_timeout checkBind)]
-                                          #_(when (nil? refState)
-                                              ;;refMsg => Not connected ;;Broken pipe
-                                              (errorf "error state[%s]"refmsg)
-                                              (Thread/sleep 3000)
-                                              (let [newbind(BindTransciever.)
-                                                    _ (swap! checkBind inc)]
-                                                (info "reattempting to rebind due to refmsg =" @checkBind )
-                                                (attemptBind newbind)))))
+                                      (let []
+                                        (async/go
+                                          (let [[refState refmsg] (pr/processRequest pdu session newini as_url msg_esme_error
+                                                                                     as_connect_timeout as_read_timeout
+                                                                                     msg_as_timeout checkBind)]
+                                            #_(when (nil? refState)
+                                                ;;refMsg => Not connected ;;Broken pipe
+                                                (errorf "error state[%s]"refmsg)
+                                                (Thread/sleep 3000)
+                                                (let [newbind(BindTransciever.)
+                                                      _ (swap! checkBind inc)]
+                                                  (info "reattempting to rebind due to refmsg =" @checkBind )
+                                                  (attemptBind newbind)))))
+                                        )
                                       (if (.isResponse pdu)
                                         (do
-                                          (if (== (.getCommandStatus pdu) (Data/ESME_RSUBMITFAIL ))
+                                          (if (= (.getCommandStatus pdu) (Data/ESME_RSUBMITFAIL))
                                             (error "asynchronous response Failed |" (.debugString pdu))
                                             (do
                                               (reset! checkBind 0)
@@ -145,11 +149,9 @@ esme.core
                 bindResp (.bind session bindReq pduListener)]
             (info "Bind response: " (.debugString bindResp))
             (info "Command Status: " (.getCommandStatus bindResp))
-            (if (== (.getCommandStatus bindResp) (Data/ESME_ROK))
+            (if (= (.getCommandStatus bindResp) (Data/ESME_ROK))
               (do
                 (info "Bound to USSD Successfully.")
-
-                (.addShutdownHook (Runtime/getRuntime) (Thread. (unbind)))
                 ;;send enquirelink every 1secs
                 ;;(set-interval #(task session attemptBind checkBind) 1000)
                 (doto (Timer. "enquireLink" true)
@@ -159,6 +161,8 @@ esme.core
               (do
                 (error "Sorry couldnt bind to USSD gateway")
                 (System/exit 0)))
+
+            (.addShutdownHook (Runtime/getRuntime) (Thread. #(unbind)))
 
 
             ;  (TLV. ussd_service_opt)
