@@ -17,10 +17,11 @@ public class SessionParams {
         this.session_data = new Hashtable();
     }
 
-    public String newSession(String msisdn){
+    public String newSession(String msisdn, String data){
         JenkinsHash hash = new JenkinsHash();
         String sessionId = Integer.toString(hash.hashCode());
-        this.session_data.put(msisdn, sessionId);
+        String input_data = "{:sessionid "+sessionId+" :data {"+data+"}}";
+        this.session_data.put(msisdn, input_data);
         return sessionId;
     }
 

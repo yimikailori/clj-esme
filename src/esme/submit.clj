@@ -8,8 +8,12 @@
            (org.smpp.util ByteBuffer)
            (org.smpp Data)))
 
-(defn ussdparams [request act ussd_service_tag_param ussd_service_tag session msisdn msg]
-  (let [action (cond (= act "C") 2
+(defn ussdparams [request newini act ussd_service_tag_param ussd_service_tag session msisdn msg]
+  (let [action (if act 2
+                 (do
+                   (.clearSession newini msisdn)
+                   17))
+        #_(cond (= act "C") 2
                      ( = act "S") 17
                      (= act "N") 3
                      :else "32")]
@@ -34,7 +38,7 @@
     ["recieved" nil]))
 
 (defn submit
-  [^PDU pdu ^Session session ^String type newini as_url msg_esme_error as_connect_timeout as_read_timeout msg_as_timeout & args]
+  [^PDU pdu ^Session session ^String type newini as_url msg_esme_error as_connect_timeout as_read_timeout msg_app_error & args]
 
     (debug "Preparing SubmitSm PDU, Request type: " type )
     (let [request (SubmitSM.)
@@ -45,7 +49,7 @@
           ussd_service_tag_param (atom 20)]
       (try
         (debug "Request Details: MSISDN:" msisdn "INPUT:" input )
-        (let [s1 (cond (= type "0501000101") (let [ses (.newSession newini msisdn)]
+        (let [s1 (cond (= type "0501000101") (let [ses (.newSession newini msisdn )]
                                                (debug "New Session APP Request Params:" msisdn "|" input "|" ses "|"(str @as_request_type))
                                                ses)
                        (= type "0501000112") (let [_ (reset! as_request_type 1)
@@ -57,14 +61,12 @@
                                ses))]
           (let [start (System/currentTimeMillis)
                 as_resp (ca/callAPP msisdn input s1 @as_request_type as_url
-                                    as_connect_timeout as_read_timeout msg_as_timeout)
-                jsonObj (json/read-str as_resp :key-fn keyword)
-                msg (:message jsonObj )
-                action (:action jsonObj)
+                                    as_connect_timeout as_read_timeout msg_app_error)
+                {:keys [message terminate]} as_resp
                 duration (- (System/currentTimeMillis) start)]
-            (debugf "callApp [%s|%s|%s|%s]" duration (str/trim (str/join "\\n" (str/split-lines msg))) msisdn action)
-            (ussdparams request action ussd_service_tag_param ussd_service_tag session msisdn msg)))
+            (debugf "callApp [%s|%s|%s|%s]" duration (str/trim (str/join "\\n" (str/split-lines message))) msisdn terminate)
+            (ussdparams request newini terminate ussd_service_tag_param ussd_service_tag session msisdn message)))
     (catch Exception e
       (error "Exception: Error while submiting: " (.printStackTrace e) )
-      (ussdparams request "S" ussd_service_tag_param ussd_service_tag session msisdn msg_esme_error)
+      (ussdparams request newini false ussd_service_tag_param ussd_service_tag session msisdn msg_esme_error)
      ))))

@@ -12,7 +12,7 @@
 
 
 (defn processRequest
-  [pdu session newini as_url msg_esme_error as_connect_timeout as_read_timeout msg_as_timeout checkBind]
+  [pdu session newini as_url msg_esme_error as_connect_timeout as_read_timeout msg_app_error checkBind]
   ; It means if commandID pdu is equals 5
   ; (if (=(.getCommandId pdu) 5)
   (when (=(.getCommandId pdu) (Data/DELIVER_SM))
@@ -30,7 +30,8 @@
               (info "Received SM USSD_SERVICE_TYPE | " (.getHexDump (.getData ussd_service_tag)) "| Call AS and Respond")
               (.respond session resp)
               ;;submit function here and call APP here
-              (sm/submit pdu session (.getHexDump (.getData ussd_service_tag)) newini as_url msg_esme_error as_connect_timeout as_read_timeout msg_as_timeout))
+              (sm/submit pdu session (.getHexDump (.getData ussd_service_tag)) newini as_url msg_esme_error
+                         as_connect_timeout as_read_timeout msg_app_error))
 
             ;else clear or end session
             (let [msisdn (.getAddress (.getSourceAddr pdu))

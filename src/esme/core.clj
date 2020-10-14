@@ -84,7 +84,7 @@ esme.core
            msg_esme_error   :msg-esme-error
            as_connect_timeout :as-connect-timeout
            as_read_timeout   :as-read-timeout
-           msg_as_timeout    :msg-as-timeout} (config config_details)]
+           msg_app_error    :msg-app-error} (config config_details)]
 
         (try
           (info (str "ussd_ip and port is " ussd_ip ":" ussd_port))
@@ -127,7 +127,7 @@ esme.core
                                         (async/go
                                           (let [[refState refmsg] (pr/processRequest pdu session newini as_url msg_esme_error
                                                                                      as_connect_timeout as_read_timeout
-                                                                                     msg_as_timeout checkBind)]
+                                                                                     msg_app_error checkBind)]
                                             #_(when (nil? refState)
                                                 ;;refMsg => Not connected ;;Broken pipe
                                                 (errorf "error state[%s]"refmsg)
