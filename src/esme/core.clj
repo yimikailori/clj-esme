@@ -7,7 +7,8 @@ esme.core
         [clojure.tools.cli :only (cli)]
         [clojure-ini.core :as prop])
   (:require [esme.processRequest :as pr]
-            [clojure.core.async :refer [go chan <! >!] :as async])
+            [clojure.core.async :refer [go chan <! >!] :as async]
+            [clojure.string :as str])
   (:import org.smpp.TCPIPConnection)
   (:import org.smpp.pdu.BindTransciever)
   (:import org.smpp.util.Queue)
@@ -93,23 +94,19 @@ esme.core
                 connect (TCPIPConnection. ussd_ip (Integer. ussd_port))
                 session (Session. connect)
                 attemptBind (fn [bindReq]
-                              (do
-                                (.setReceiveTimeout connect 5000)
-
-                                (info (str "Attempting to bind with id:" ussd_id ", bindcount ="@checkBind))
-                                (.setSystemId bindReq ussd_id)
-
-                                (info (str "Attempting to bind with password: *********" ))
-                                (.setPassword bindReq ussd_password)
-
-                                (info (str "Attempting to bind with system_type: " ussd_system_type))
-                                (.setSystemType bindReq ussd_system_type)
-
-                                (.setInterfaceVersion bindReq (byte 0x34))
-
-                                (.setAddressRange bindReq (byte 0) (byte 0) (str ""))
-
-                                (infof "Trying to bind now (%s)" (.debugString bindReq))))
+                              (let [ussdid (str/split ussd_id #",")
+                                    ussdpassword (str/split ussd_password #",")]
+                                (doseq [[num id] (map-indexed vector ussdid)]
+                                  (.setReceiveTimeout connect 5000)
+                                  (info (str "Attempting to bind with id:" id ", bindcount ="@checkBind))
+                                  (.setSystemId bindReq id)
+                                  (info (str "Attempting to bind with password: *********" ))
+                                  (.setPassword bindReq (get ussdpassword num))
+                                  (info (str "Attempting to bind with system_type: " ussd_system_type))
+                                  (.setSystemType bindReq ussd_system_type)
+                                  (.setInterfaceVersion bindReq (byte 0x34))
+                                  (.setAddressRange bindReq (byte 0) (byte 0) (str ""))
+                                  (infof "Trying to bind now (%s|%s|%s)" (inc num) ussdid (.debugString bindReq)))))
                 unbind (fn []
                          (let [response (.unbind session)
                                _ (info "Ubind Response" (.debugString response))
