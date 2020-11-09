@@ -98,7 +98,7 @@ esme.core
                                     ussdpassword (str/split ussd_password #",")]
                                 (doseq [[num id] (map-indexed vector ussdid)]
                                   (.setReceiveTimeout connect 5000)
-                                  (info (str "Attempting to bind with id:" id ", bindcount ="@checkBind))
+                                  (info (str "Attempting to bind with id:" id))
                                   (.setSystemId bindReq id)
                                   (info (str "Attempting to bind with password: *********" ))
                                   (.setPassword bindReq (get ussdpassword num))
@@ -156,6 +156,7 @@ esme.core
                                           (run [] (task session attemptBind)))
                                         5000 5000)))
               (do
+                (errorf "Bind Response failed: Received %s != Expected %s <- %s" (.getCommandStatus bindResp) (Data/ESME_ROK) (.debugString bindResp))
                 (error "Sorry couldnt bind to USSD gateway")
                 (System/exit 0)))
 
