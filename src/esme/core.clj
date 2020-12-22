@@ -137,10 +137,10 @@ esme.core
                                       (if (.isResponse pdu)
                                         (do
                                           (if (= (.getCommandStatus pdu) (Data/ESME_RSUBMITFAIL))
-                                            (error "asynchronous response Failed |" (.debugString pdu))
+                                            (error "asynchronous pdu response Failed |" (.debugString pdu))
                                             (do
                                               (reset! checkBind 0)
-                                              (debug "asynchronous response received |" (.debugString pdu)))))
+                                              (debug "asynchronous pdu response received |" (.debugString pdu)))))
                                         (warn "asynchronous unknown pdu response received |" (.debugString pdu)))
                                       ))))
                 bindResp (.bind session bindReq pduListener)]

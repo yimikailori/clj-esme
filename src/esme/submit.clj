@@ -9,10 +9,10 @@
            (org.smpp Data)))
 
 (defn ussdparams [request act ussd_service_tag_param ussd_service_tag session msisdn msg]
-  (let [action (cond (= act "C") 2
-                     ( = act "S") 17
-                     (= act "N") 3
-                     :else "32")]
+  (let [action (cond (= act true) 2
+                     ( = act false) 17
+                     ;(= act "N") 3
+                     :else 17)]
     (.setServiceType request (str "USSD"))
     (.setSourceAddr request msisdn)
     (.setDestAddr request msisdn)
@@ -57,7 +57,7 @@
                                ses))]
           (let [start (System/currentTimeMillis)
                 as_resp (ca/callAPP msisdn input s1 @as_request_type as_url
-                                    as_connect_timeout as_read_timeout msg_as_timeout)
+                                    as_connect_timeout as_read_timeout msg_as_timeout type)
                 jsonObj (json/read-str as_resp :key-fn keyword)
                 msg (:message jsonObj )
                 action (:action jsonObj)
@@ -65,6 +65,6 @@
             (debugf "callApp [%s|%s|%s|%s]" duration (str/trim (str/join "\\n" (str/split-lines msg))) msisdn action)
             (ussdparams request action ussd_service_tag_param ussd_service_tag session msisdn msg)))
     (catch Exception e
-      (error "Exception: Error while submiting: " (.printStackTrace e) )
-      (ussdparams request "S" ussd_service_tag_param ussd_service_tag session msisdn msg_esme_error)
+      (error "Exception: Error while submiting: " (.getMessage e) )
+      (ussdparams request false ussd_service_tag_param ussd_service_tag session msisdn msg_esme_error)
      ))))

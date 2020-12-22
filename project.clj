@@ -11,7 +11,8 @@
                                                                javax.jms/jms
                                                                com.sun.jdmk/jmxtools
                                                                com.sun.jmx/jmxri]]
-                            [org.clojure/tools.logging "0.2.6"]]
+                            [org.clojure/tools.logging "0.2.6"]
+                            [ch.qos.logback/logback-classic "1.2.3"]]
             :profiles  {:uberjar {:aot :all
                                   :uberjar-name  "clj_esmesmpp-2.1.0-SNAPSHOT-standalone.jar"}}
   :global-vars {*warn-on-reflection* false}
