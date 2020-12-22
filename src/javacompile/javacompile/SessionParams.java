@@ -37,5 +37,8 @@ public class SessionParams {
         return this.session_data.containsKey(msisdn);
     }
 
-
+    public boolean sessionSave(String jmgMsisdn, String data){
+        this.session_data.put(jmgMsisdn, data);
+        return true;
+    }
 }

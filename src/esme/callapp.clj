@@ -1,55 +1,68 @@
 (ns esme.callapp
   (:use [clojure.tools.logging])
-  (:require [clojure.data.json :as json]
-            [clojure.data.codec.base64 :as b64]
-            [org.httpkit.client :as http]
+  (:require [clojure.data.json :as json])
+  (:require [org.httpkit.client :as http]
             [clojure.string :as str])
   (:import (java.net ConnectException SocketTimeoutException)
-           (org.json.simple.parser JSONParser)))
+           (org.json.simple.parser JSONParser)
+           (java.util Base64)))
 
+
+(defn encode [to-encode]
+  (.encodeToString (Base64/getEncoder) (.getBytes to-encode)))
 
 (defn callAPP
   [msisdn  input sessionId as_request_type as_url
-   as_connect_timeout as_read_timeout msg_app_error]
+   as_connect_timeout as_read_timeout msg_as_timeout type]
 
   (if (every? empty? [msisdn input sessionId as_request_type])
-    ;{"rc":"0","ogn":"07034740599","opid":"011","ur":"*123*0","config":"ur","mk":"T","sid":"1600
-    ;08504957307034740599"}
-
-    ;{"rc":"0","jmgObj":{"tk":"MDcwMzQ3NDA1OTk6U3VuIFNlcCAxMyAyMzo1OTo1OSBXQV
-    ;QgMjAyMA==","mg":"","pmg":"","stk":""},"ogn":"07034740599","opid":"011","ur":"*123*0*1
-    ;","config":"ur","mk":"T","sid":"160001080733307034740599"}
-    (let [resp (json/write-str {:message msg_app_error, :terminate false})]
+    (let [resp (json/write-str {:message msg_as_timeout, :action false})]
       resp)
-    (let [params {:rc "0" :ogn msisdn :opid "011" :ur input :config "ur" :mk "T" :sid sessionId}
-          resp (json/write-str params)
-          options  {:socket-timeout (Integer. as_connect_timeout)
-                      :conn-timeout (Integer. as_read_timeout)
-                      :timeout (Integer. as_connect_timeout)             ; ms
-                      :query-params {:params (b64/encode (.getBytes resp))}}
-            {:keys [status body error] :as trace}  @(http/get as_url options)]
-        (try
-          (if error
-            (let [error-msg (condp instance? error
-                              ConnectException ":timeout-on-connect"
-                              SocketTimeoutException ":timeout-on-read")
-                  resp {:message msg_app_error, :terminate false}]
-              (errorf "Connection exception %s|%s" error-msg trace)
-              resp)
+    (let [is-new? (= type "0501000101")
+          data    (if is-new?
+                    (json/write-str {:rc "0" :ogn msisdn
+                                     :opid "013" :ur input :config "ur" :mk true :sid sessionId})
+                    (let [jmgObj (read-string (.getSessionId (str msisdn "jmgObj"))) ]
+                         (json/write-str {:rc "0" :jmgObj jmgObj
+                                          :ogn msisdn :opid "013" :ur input
+                                          :config "ur" :mk true :sid sessionId})))
+          _ (infof "callApp data msisdn=%s,data=%s"msisdn data)
+          options  {:socket-timeout (Integer/parseInt as_connect_timeout)
+                    :conn-timeout (Integer/parseInt as_read_timeout)
+                    :timeout (Integer/parseInt as_connect_timeout)             ; ms
+                    :query-params {:jParams (encode data) }}
+          {:keys [status body error] :as trace}  @(http/get as_url options)]
+      (try
+        (if error
+          (let [error-msg (condp instance? error
+                            ConnectException ":timeout-on-connect"
+                            SocketTimeoutException ":timeout-on-read")
+                resp (json/write-str {:message msg_as_timeout, :action false})]
+            (errorf "Connection exception %s|%s" error-msg trace)
+            resp)
 
-            (if (not-empty body)
-              ;{"jmgObj":{"tk":"MDcwMzQ3NDA1OTk6TW9uIFNlcCAxNCAyMzo1OTo1OSBXQVQgMjA
-              ;yMA==","mg":"","pmg":"","stk":""},"code":200,"data":"Select spend limit\r\n1. N500\r\n2.
-              ;N1000\r\n3. N2000\r\n4. N3000\r\n5. Another Amount","leaf":false,"ur":"*123*0"}
+          (if (not-empty body)
+            (let [jsonObj (json/read-str body :key-fn keyword)
+                  {:keys [jmgObj data leaf code] } jsonObj]
+              (infof "Parsed response [%s|%s]" msisdn body)
+              (if (or (nil? data) (empty? data))
+                (do
+                  (.clearSession (str msisdn "jmgObj"))
+                  (json/write-str {:message msg_as_timeout, :action false}))
+                ;{"jmgObj":{"tk":"MDcwMzQ3NDA1OTk6TW9uIFNlcCAxNCAyMzo1OTo1OSBXQVQgMjA
+                ;yMA==","mg":"","pmg":"","stk":""},"code":200,"data":"Select spend limit\r\n1. N500\r\n2.
+                ;N1000\r\n3. N2000\r\n4. N3000\r\n5. Another Amount","leaf":false,"ur":"*123*0"}
 
-              (let [jsonObj (json/read-str body :key-fn keyword)
-                    {:keys [jmgObj code data leaf ur]} jsonObj]
-                (infof "Parsed response [%s|%s]" msisdn jsonObj)
-                (if (or (nil? jsonObj) (empty? jsonObj))
-                  {:message msg_app_error, :terminate false}
-                  {:message data :terminate leaf}))
+                (let [pjmg (json/read-str jmgObj)
+                      pleaf (if (string? leaf) (read-string leaf) leaf)]
+                  (.sessionSave (str msisdn "jmgObj") (str pjmg))
+                  (json/write-str {:message data, :action pleaf}))))
 
-              {:message msg_app_error, :terminate false}))
-          (catch Exception e
-            (error "Exception: Error calling AS:" msisdn "|" (.printStackTrace e) )
-            {:message msg_app_error, :terminate false})))))
+            (do
+              (.clearSession (str msisdn "jmgObj"))
+              (json/write-str {:message msg_as_timeout, :action false}))))
+        (catch Exception e
+          (do
+            (error "Exception: Error calling AS:" msisdn "|" (.getMessage e) )
+            (.clearSession (str msisdn "jmgObj"))
+            (json/write-str {:message msg_as_timeout, :action false})))))))

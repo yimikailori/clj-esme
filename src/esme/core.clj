@@ -85,7 +85,7 @@ esme.core
            msg_esme_error   :msg-esme-error
            as_connect_timeout :as-connect-timeout
            as_read_timeout   :as-read-timeout
-           msg_app_error    :msg-app-error} (config config_details)]
+           msg_as_timeout    :msg-as-timeout} (config config_details)]
 
         (try
           (info (str "ussd_ip and port is " ussd_ip ":" ussd_port))
@@ -98,7 +98,7 @@ esme.core
                                     ussdpassword (str/split ussd_password #",")]
                                 (doseq [[num id] (map-indexed vector ussdid)]
                                   (.setReceiveTimeout connect 5000)
-                                  (info (str "Attempting to bind with id:" id))
+                                  (info (str "Attempting to bind with id:" id ", bindcount ="@checkBind))
                                   (.setSystemId bindReq id)
                                   (info (str "Attempting to bind with password: *********" ))
                                   (.setPassword bindReq (get ussdpassword num))
@@ -106,7 +106,7 @@ esme.core
                                   (.setSystemType bindReq ussd_system_type)
                                   (.setInterfaceVersion bindReq (byte 0x34))
                                   (.setAddressRange bindReq (byte 0) (byte 0) (str ""))
-                                  (infof "Trying to bind now (%s)" (.debugString bindReq)))))
+                                  (infof "Trying to bind now (%s|%s|%s)" (inc num) ussdid (.debugString bindReq)))))
                 unbind (fn []
                          (let [response (.unbind session)
                                _ (info "Ubind Response" (.debugString response))
@@ -124,7 +124,7 @@ esme.core
                                         (async/go
                                           (let [[refState refmsg] (pr/processRequest pdu session newini as_url msg_esme_error
                                                                                      as_connect_timeout as_read_timeout
-                                                                                     msg_app_error checkBind)]
+                                                                                     msg_as_timeout checkBind)]
                                             #_(when (nil? refState)
                                                 ;;refMsg => Not connected ;;Broken pipe
                                                 (errorf "error state[%s]"refmsg)
@@ -137,10 +137,10 @@ esme.core
                                       (if (.isResponse pdu)
                                         (do
                                           (if (= (.getCommandStatus pdu) (Data/ESME_RSUBMITFAIL))
-                                            (error "asynchronous response Failed |" (.debugString pdu))
+                                            (error "asynchronous pdu response Failed |" (.debugString pdu))
                                             (do
                                               (reset! checkBind 0)
-                                              (debug "asynchronous response received |" (.debugString pdu)))))
+                                              (debug "asynchronous pdu response received |" (.debugString pdu)))))
                                         (warn "asynchronous unknown pdu response received |" (.debugString pdu)))
                                       ))))
                 bindResp (.bind session bindReq pduListener)]
@@ -156,7 +156,6 @@ esme.core
                                           (run [] (task session attemptBind)))
                                         5000 5000)))
               (do
-                (errorf "Bind Response failed: Received %s != Expected %s <- %s" (.getCommandStatus bindResp) (Data/ESME_ROK) (.debugString bindResp))
                 (error "Sorry couldnt bind to USSD gateway")
                 (System/exit 0)))
 

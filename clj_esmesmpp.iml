@@ -12,11 +12,14 @@
       <sourceFolder url="file://$MODULE_DIR$/resources" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
+      <excludeFolder url="file://$MODULE_DIR$/resources" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="opensmpp-core-3.0.0" level="project" />
     <orderEntry type="library" exported="" name="JenkinsHash" level="project" />
+    <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-classic:1.2.3" level="project" />
+    <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-core:1.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.5" level="project" />
     <orderEntry type="library" name="Leiningen: http-kit:2.3.0" level="project" />
     <orderEntry type="library" name="Leiningen: log4j:1.2.17" level="project" />
@@ -36,5 +39,6 @@
     <orderEntry type="library" name="Leiningen: org.clojure/tools.logging:0.2.6" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/tools.reader:1.3.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.ow2.asm/asm:5.2" level="project" />
+    <orderEntry type="library" name="Leiningen: org.slf4j/slf4j-api:1.7.25" level="project" />
   </component>
 </module>

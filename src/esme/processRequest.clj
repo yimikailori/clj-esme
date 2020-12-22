@@ -45,7 +45,7 @@
               ["recieved" nil])))
         (catch Exception e
           (do
-            (error "Exception: Something bad happened =>" (.printStackTrace e))
+            (error "Exception: Something bad happened =>" e)
             [nil (.getMessage e)])))
       ;(debug "Request |" (.debugString pdu) "| Command ID |" (.getCommandId pdu))
       )))
