@@ -107,11 +107,7 @@ esme.core
                                   (.setInterfaceVersion bindReq (byte 0x34))
                                   (.setAddressRange bindReq (byte 0) (byte 0) (str ""))
                                   (infof "Trying to bind now (%s|%s|%s)" (inc num) ussdid (.debugString bindReq)))))
-                unbind (fn []
-                         (let [response (.unbind session)
-                               _ (info "Ubind Response" (.debugString response))
-                               _ (shutdown-agents)]
-                           (info "Service shutting down")))
+
                 _  (attemptBind bindReq)
                 requestEvents (Queue.)
                 newini (SessionParams.)
@@ -151,6 +147,9 @@ esme.core
                 (info "Bound to USSD Successfully.")
                 ;;send enquirelink every 1secs
                 ;;(set-interval #(task session attemptBind checkBind) 1000)
+                (.addShutdownHook (Runtime/getRuntime) (Thread. (fn []
+                                                                    (let [response (.unbind session)]
+                                                                         (info "Service shutting down " (.debugString response))))))
                 (doto (Timer. "enquireLink" true)
                   (.scheduleAtFixedRate (proxy [TimerTask] []
                                           (run [] (task session attemptBind)))
@@ -159,7 +158,7 @@ esme.core
                 (error "Sorry couldnt bind to USSD gateway")
                 (System/exit 0)))
 
-            (.addShutdownHook (Runtime/getRuntime) (Thread. #(unbind)))
+
 
 
             ;  (TLV. ussd_service_opt)
