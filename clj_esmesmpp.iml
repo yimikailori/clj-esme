@@ -21,14 +21,14 @@
     <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-classic:1.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-core:1.2.3" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.5" level="project" />
-    <orderEntry type="library" name="Leiningen: http-kit:2.3.0" level="project" />
+    <orderEntry type="library" name="Leiningen: http-kit:2.5.0" level="project" />
+    <orderEntry type="library" name="Leiningen: log4j:1.2.17" level="project" />
     <orderEntry type="library" name="Leiningen: nrepl:0.6.0" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/clojure:1.10.1" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.async:0.7.559" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.cache:0.8.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.memoize:0.8.2" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/core.specs.alpha:0.2.44" level="project" />
-    <orderEntry type="library" name="Leiningen: org.clojure/data.codec:0.1.1" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/data.json:0.2.7" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/data.priority-map:0.0.7" level="project" />
     <orderEntry type="library" name="Leiningen: org.clojure/spec.alpha:0.2.176" level="project" />
