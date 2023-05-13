@@ -2,3 +2,6 @@
 logs
 out
 target
+.clj-kondo
+.lsp
+.DS_Store

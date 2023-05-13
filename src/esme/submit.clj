@@ -10,7 +10,9 @@
 
 (defn ussdparams [request act ussd_service_tag_param ussd_service_tag session msisdn msg]
   (let [action (cond (= act true) 2
-                     ( = act false) 17
+                     (= act false) 17
+                     (= act "C") 2
+                     (= act "S") 17
                      ;(= act "N") 3
                      :else 17)]
     (.setServiceType request (str "USSD"))
@@ -57,7 +59,7 @@
                                ses))]
           (let [start (System/currentTimeMillis)
                 as_resp (ca/callAPP msisdn input s1 @as_request_type as_url
-                                    as_connect_timeout as_read_timeout msg_as_timeout type)
+                                    as_connect_timeout as_read_timeout msg_as_timeout)
                 jsonObj (json/read-str as_resp :key-fn keyword)
                 msg (:message jsonObj )
                 action (:action jsonObj)

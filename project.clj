@@ -1,4 +1,4 @@
-(defproject clj_esmesmpp "2.1.0-SNAPSHOT"
+(defproject clj_esmesmpp "2.1.1.g-SNAPSHOT"
             :description "ESME Application clojure."
             :author "yilori"
             :omit-source true :min-lein-version "2.0.0"
@@ -14,7 +14,7 @@
                             [org.clojure/tools.logging "0.2.6"]
                             [ch.qos.logback/logback-classic "1.2.3"]]
             :profiles  {:uberjar {:aot :all
-                                  :uberjar-name  "clj_esmesmpp-2.1.0-SNAPSHOT-standalone.jar"}}
+                                  :uberjar-name  "clj_esmesmpp-2.1.1.g-SNAPSHOT-standalone.jar"}}
   :global-vars {*warn-on-reflection* false}
   :main ^:skip-aot esme.core
   :source-paths ["src"]
